@@ -63,6 +63,7 @@ class UI(QtGui.QWidget):
         self.resize(APP_WIDTH, APP_HEIGHT)
         self.center()
         self.setTheme()
+        self.calledOnFinish = False
         self.createScreens()
         self.showScreen(self.dependencyScreen)
         self.show()
@@ -71,7 +72,9 @@ class UI(QtGui.QWidget):
     # @Override
     # gets called when the main window is closed - we clean up here
     def closeEvent(self, event):
-        self.onFinish()
+        if not self.calledOnFinish:
+            self.calledOnFinish = True
+            self.onFinish(event)
 
     def center(self):
         # centers the application on the screen
@@ -137,7 +140,7 @@ class UI(QtGui.QWidget):
         container = self.createContainer(x, y)
 
         self.finishLabel = container.addLabel("Kano OS has successfully been burned. Let's go!", LABEL_CSS_TITLE)
-        self.FinishButton = container.addButton("FINISH", self.onFinishClick)
+        self.finishButton = container.addButton("FINISH", self.onFinishClick)
         return container
 
     def createErrorScreen(self, x, y):
@@ -146,7 +149,7 @@ class UI(QtGui.QWidget):
         self.errorTitleLabel = container.addLabel('title', LABEL_CSS_TITLE)
         self.errorDescriptionLabel = container.addLabel('description', LABEL_CSS_DESCRIPTION)
         container.addSpacer(20)
-        self.FinishButton = container.addButton("TRY AGAIN", self.onRetryClick)
+        self.retryButton = container.addButton("TRY AGAIN", self.onRetryClick)
         return container
 
     def createContainer(self, x, y):
@@ -164,9 +167,13 @@ class UI(QtGui.QWidget):
         self.errorScreen.hide()
         screen.show()
 
-    def showError(self, error):
+    def showError(self, error, retry=True):
         self.errorTitleLabel.setText(error['title'])
         self.errorDescriptionLabel.setText(error['description'])
+        if retry:
+            self.retryButton.show()
+        else:
+            self.retryButton.hide()
         self.showScreen(self.errorScreen)
 
     def setProgress(self, progress):
@@ -181,7 +188,7 @@ class UI(QtGui.QWidget):
     def onStart(self):
         pass
 
-    def onFinish(self):
+    def onFinish(self, event):
         pass
 
     def onStartClick(self):

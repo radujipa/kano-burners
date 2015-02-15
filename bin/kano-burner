@@ -40,8 +40,8 @@ from PyQt4 import QtGui, QtCore
 from src.common.ui import UI
 from src.common.widgets import DisclaimerDialog
 from src.common.download import download_kano_os
-from src.common.utils import delete_dir, debugger
-from src.common.errors import NO_DISKS_ERROR
+from src.common.utils import stop_child_processes, delete_dir, debugger
+from src.common.errors import NO_DISKS_ERROR, REMOVE_TEMP_ERROR
 from src.common.paths import temp_path
 
 
@@ -83,13 +83,13 @@ class BurnerGUI(UI):
         # dependency checking is done in a separate thread to avoid app freezing
         # we connect a termination Qt signal with a UI method to advance the process
         dependencyThread = BurnerDependencyThread()
-        dependencyThread.notifyFinish.connect(self.onDependencyFinish)
+        dependencyThread.notifyFinish.connect(self.onDependencyThreadFinish)
 
         dependencyThread.start()
         time.sleep(1)  # very odd fix - Qt thread is killed without it
 
     # This method is called when the dependecyThread finishes
-    def onDependencyFinish(self, error):
+    def onDependencyThreadFinish(self, error):
         if error:
             self.showError(error)
         else:
@@ -139,14 +139,14 @@ class BurnerGUI(UI):
         backendThread.notifyProgress.connect(self.setProgress)
         backendThread.notifyStage.connect(self.setStatusTitle)
         backendThread.notifyDescription.connect(self.setStatusDescription)
-        backendThread.notifyFinish.connect(self.onBackendFinish)
+        backendThread.notifyFinish.connect(self.onBackendThreadFinish)
 
         # start the thread and wait for it to finish
         backendThread.start()
         time.sleep(1)  # very odd fix - Qt thread is killed without it
 
     # This method is called when the backendThread finishes
-    def onBackendFinish(self, error):
+    def onBackendThreadFinish(self, error):
         if error:
             self.showError(error)
         else:
@@ -168,9 +168,16 @@ class BurnerGUI(UI):
 
     # @Override
     # This method is called when the application is closing
-    def onFinish(self):
+    def onFinish(self, event):
+        debugger('Attempting to stop child processes..')
+        stop_child_processes()
+
         debugger('Removing temp files')
-        delete_dir(temp_path)  # only useful when running from source
+        successful = delete_dir(temp_path)
+
+        if not successful:
+            self.showError(REMOVE_TEMP_ERROR, retry=False)
+            event.ignore()  # stop the app from closing
 
 
 class BurnerDependencyThread(QtCore.QThread):

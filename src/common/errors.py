@@ -11,6 +11,9 @@
 # This file only contains typical errors to be reported on the UI.
 
 
+from src.common.paths import temp_path
+
+
 INTERNET_ERROR = {
     'title': 'No internet connection..',
     'description': 'You need to be connected to the internet to download Kano OS'
@@ -42,4 +45,8 @@ MD5_ERROR = {
 BURN_ERROR = {
     'title': 'Burning Kano OS failed..',
     'description': 'Make sure the SD card is still correctly inserted and try again'
+}
+REMOVE_TEMP_ERROR = {
+    'title': 'Removing temporary files failed..',
+    'description': 'Please manually remove directory to save system space\n{}'.format(temp_path)
 }

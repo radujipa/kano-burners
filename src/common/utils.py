@@ -15,7 +15,9 @@
 
 import os
 import sys
+import time
 import shutil
+import psutil
 import signal
 import subprocess
 from urllib2 import urlopen
@@ -72,9 +74,33 @@ def run_cmd_no_pipe(cmd):
     return stdout, stderr, return_code
 
 
+def stop_child_processes():
+    try:
+        parent = psutil.Process(os.getpid())
+        processes_left = True
+
+        while processes_left:
+            processes_left = False
+
+            for child in parent.children(recursive=True):
+                if child.name() != 'conhost.exe':
+                    debugger('Killing {}'.format(child.name()))
+                    child.kill()
+                    processes_left = True
+
+            time.sleep(2)
+    except:
+        debugger('[ERROR] Killing child processes failed')
+
+
 def delete_dir(directory):
-    if os.path.exists(directory):
-        shutil.rmtree(directory)
+    try:
+        if os.path.exists(directory):
+            shutil.rmtree(directory)
+        return True
+    except:
+        debugger('[ERROR] Deleting directory {} failed'.format(directory))
+        return False
 
 
 def make_dir(directory):
