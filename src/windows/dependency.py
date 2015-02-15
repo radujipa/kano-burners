@@ -19,6 +19,8 @@
 import os
 import sys
 import math
+import time
+import psutil
 import win32con
 import win32com.shell.shell as shell
 
@@ -26,17 +28,6 @@ from src.common.download import get_latest_os_info
 from src.common.utils import run_cmd_no_pipe, is_internet, debugger, BYTES_IN_MEGABYTE
 from src.common.errors import INTERNET_ERROR, TOOLS_ERROR, SERVER_DOWN_ERROR, FREE_SPACE_ERROR
 from src.common.paths import _7zip_path, _dd_path, _nircmd_path, temp_path
-
-
-def request_admin_privileges():
-    ASADMIN = 'asadmin'
-
-    if sys.argv[-1] != ASADMIN:
-        script = os.path.abspath(sys.argv[0])
-        params = ' '.join([script] + sys.argv[1:] + [ASADMIN])
-        shell.ShellExecuteEx(lpVerb='runas', lpFile=sys.executable,
-                             lpParameters=params, nShow=win32con.SW_SHOW)
-        sys.exit(0)
 
 
 def check_dependencies():
@@ -138,3 +129,45 @@ def is_sufficient_space(required_mb):
 
     debugger('Free space {0:.2f} MB in {1}'.format(free_space_mb, temp_path))
     return free_space_mb > required_mb
+
+
+def request_admin_privileges():
+    '''
+    This method is called when the app is launched and it requests
+    the user to provide administrator privileges.
+    '''
+
+    ASADMIN = 'asadmin'
+    if sys.argv[-1] != ASADMIN:
+        script = os.path.abspath(sys.argv[0])
+        params = ' '.join([script] + sys.argv[1:] + [ASADMIN])
+        shell.ShellExecuteEx(lpVerb='runas', lpFile=sys.executable,
+                             lpParameters=params, nShow=win32con.SW_SHOW)
+        sys.exit(0)
+
+
+def stop_child_processes():
+    '''
+    This stub is called by kano-burner when the app closes.
+
+    Windows requires this routine in order to terminate all running processes
+    such that we are able to delete the temp folder.
+    '''
+
+    try:
+        parent = psutil.Process(os.getpid())
+        processes_left = True
+
+        while processes_left:
+            processes_left = False
+
+            for child in parent.children(recursive=True):
+                if child.name() != 'conhost.exe':
+                    debugger('Killing {}'.format(child.name()))
+                    child.kill()
+                    processes_left = True
+
+            time.sleep(2)
+    except:
+        debugger('[ERROR] Killing child processes failed')
+

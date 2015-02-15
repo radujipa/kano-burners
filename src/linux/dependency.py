@@ -24,11 +24,6 @@ from src.common.errors import INTERNET_ERROR, TOOLS_ERROR, SERVER_DOWN_ERROR, FR
 from src.common.paths import temp_path
 
 
-def request_admin_privileges():
-    # TODO?
-    pass
-
-
 def check_dependencies():
     '''
     This method is used by the BurnerGUI at the start
@@ -124,3 +119,20 @@ def is_sufficient_space(required_mb):
 
     debugger('Free space {0:.2f} MB in {1}'.format(free_space_mb, temp_path))
     return free_space_mb > required_mb
+
+
+def request_admin_privileges():
+    '''
+    This stub is called by kano-burner when the app launches
+    '''
+    # TODO?
+    pass
+
+
+def stop_child_processes():
+    '''
+    This stub is called by kano-burner when the app closes
+    '''
+    # Linux gracefully terminates all running processes
+    # when the application is closed via [X] button
+    pass
